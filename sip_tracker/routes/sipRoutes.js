@@ -5,7 +5,8 @@ const {
     createSIP,
     getSIP,
     processSIP,
-    getTransactions
+    getTransactions,
+    getAllTransactions
 } = require('../controllers/sipController');
 
 const {
@@ -19,5 +20,7 @@ router.get('/:sipId',  getSIP);
 router.post('/:sipId/process',  processSIP);
 
 router.get('/:sipId/transactions',  getTransactions);
+
+router.get('/transactions/all', getAllTransactions);
 
 module.exports = router;

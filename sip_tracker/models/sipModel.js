@@ -1,4 +1,4 @@
-const db = require('../utility/dbManager');
+const db = require('../utility/pgManager');
 
 const insertSIP = async (data) => {
 
@@ -13,10 +13,10 @@ const insertSIP = async (data) => {
             sip_execution_date,
             sip_status
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
     `;
 
-    await db.execute(sql, [
+    await db.query(sql, [
         data.sip_id,
         data.investor_id,
         data.portfolio_id,
@@ -35,56 +35,54 @@ const fetchSIP = async (sipId) => {
 
     const sql = `
         SELECT * FROM sip
-        WHERE sip_id = ?
+        WHERE sip_id = $1
     `;
 
-    const [rows] = await db.execute(sql, [sipId]);
+    const result = await db.query(sql, [sipId]);
 
-    return rows;
+    return result.rows;
 };
 
 const processSIPTransaction = async (sipId) => {
 
-    const connection = await db.getConnection();
-
     try {
 
-        await connection.beginTransaction();
+        await db.query('BEGIN');
 
-        const [sipRows] = await connection.execute(
+        const sipResult = await db.query(
             `
             SELECT *
             FROM sip
-            WHERE sip_id = ?
+            WHERE sip_id = $1
             `,
             [sipId]
         );
 
-        if (sipRows.length === 0) {
+        if (sipResult.rows.length === 0) {
             throw new Error('SIP not found');
         }
 
-        const sip = sipRows[0];
+        const sip = sipResult.rows[0];
 
         if (sip.sip_status !== 'ACTIVE') {
             throw new Error('SIP is not active');
         }
 
-        const [fundRows] = await connection.execute(
+        const fundResult = await db.query(
             `
             SELECT current_nav
             FROM mutual_funds
-            WHERE fund_id = ?
+            WHERE fund_id = $1
             `,
             [sip.fund_id]
         );
 
-        if (fundRows.length === 0) {
+        if (fundResult.rows.length === 0) {
             throw new Error('Fund not found');
         }
 
         const currentNAV =
-            fundRows[0].current_nav;
+            fundResult.rows[0].current_nav;
 
         const unitsPurchased =
             Number(
@@ -93,7 +91,7 @@ const processSIPTransaction = async (sipId) => {
                 ).toFixed(6)
             );
 
-        await connection.execute(
+        await db.query(
             `
             INSERT INTO investment_transactions
             (
@@ -105,7 +103,7 @@ const processSIPTransaction = async (sipId) => {
                 units_purchased,
                 purchase_date
             )
-            VALUES (?, ?, ?, ?, ?, ?, CURDATE())
+            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)
             `,
             [
                 sip.sip_id,
@@ -117,7 +115,7 @@ const processSIPTransaction = async (sipId) => {
             ]
         );
 
-        await connection.commit();
+        await db.query('COMMIT');
 
         return {
             message: 'SIP Processed Successfully'
@@ -125,13 +123,9 @@ const processSIPTransaction = async (sipId) => {
 
     } catch (error) {
 
-        await connection.rollback();
+        await db.query('ROLLBACK');
 
         throw error;
-
-    } finally {
-
-        connection.release();
     }
 };
 const fetchTransactions = async (sipId) => {
@@ -139,6 +133,9 @@ const fetchTransactions = async (sipId) => {
     const sql = `
         SELECT
             transaction_id,
+            sip_id,
+            investor_id,
+            fund_id,
             invested_amount,
             nav_at_purchase,
             units_purchased,
@@ -146,17 +143,41 @@ const fetchTransactions = async (sipId) => {
 
         FROM investment_transactions
 
-        WHERE sip_id = ?
+        WHERE sip_id = $1
     `;
 
-    const [rows] = await db.execute(sql, [sipId]);
+    const result = await db.query(sql, [sipId]);
 
-    return rows;
+    return result.rows;
+};
+
+const fetchAllTransactions = async () => {
+
+    const sql = `
+        SELECT
+            transaction_id,
+            sip_id,
+            investor_id,
+            fund_id,
+            invested_amount,
+            nav_at_purchase,
+            units_purchased,
+            purchase_date
+
+        FROM investment_transactions
+
+        ORDER BY purchase_date DESC
+    `;
+
+    const result = await db.query(sql);
+
+    return result.rows;
 };
 
 module.exports = {
     insertSIP,
     fetchSIP,
     processSIPTransaction,
-    fetchTransactions
+    fetchTransactions,
+    fetchAllTransactions
 };

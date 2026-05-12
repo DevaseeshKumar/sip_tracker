@@ -86,9 +86,32 @@ const getTransactions = async (req, res) => {
     }
 };
 
+const {
+    fetchAllTransactions
+} = require('../models/sipModel');
+
+const getAllTransactions = async (req, res) => {
+
+    try {
+
+        const transactions =
+            await fetchAllTransactions();
+
+        res.status(200).json(transactions);
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+
+
 module.exports = {
     createSIP,
     getSIP,
     processSIP,
-    getTransactions
+    getTransactions,
+    getAllTransactions
 };

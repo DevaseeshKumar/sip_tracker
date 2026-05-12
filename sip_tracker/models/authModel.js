@@ -1,4 +1,4 @@
-const db = require('../utility/dbManager');
+const db = require('../utility/pgManager');
 
 const {
     signJWT
@@ -18,23 +18,23 @@ const loginInvestor = async (
     const sql = `
         SELECT *
         FROM investors
-        WHERE email = ?
-        AND password = ?
+        WHERE email = $1
+        AND password = $2
     `;
 
-    const [rows] = await db.execute(
+    const result = await db.query(
         sql,
         [email, password]
     );
 
-    if (rows.length === 0) {
+    if (result.rows.length === 0) {
 
         throw new Error(
             'Invalid email or password'
         );
     }
 
-    const investor = rows[0];
+    const investor = result.rows[0];
 
 
 

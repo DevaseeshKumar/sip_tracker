@@ -1,4 +1,4 @@
-const db = require('../utility/dbManager');
+const db = require('../utility/pgManager');
 
 
 
@@ -10,10 +10,10 @@ const insertAMC = async (data) => {
             amc_id,
             amc_name
         )
-        VALUES (?, ?)
+        VALUES ($1, $2)
     `;
 
-    await db.execute(sql, [
+    await db.query(sql, [
         data.amc_id,
         data.amc_name
     ]);
@@ -32,9 +32,9 @@ const fetchAMCs = async () => {
         FROM amc
     `;
 
-    const [rows] = await db.execute(sql);
+    const result = await db.query(sql);
 
-    return rows;
+    return result.rows;
 };
 
 
@@ -50,10 +50,10 @@ const insertFund = async (data) => {
             fund_category,
             current_nav
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5)
     `;
 
-    await db.execute(sql, [
+    await db.query(sql, [
         data.fund_id,
         data.amc_id,
         data.fund_name,
@@ -90,9 +90,9 @@ const fetchFunds = async () => {
         ON mf.amc_id = a.amc_id
     `;
 
-    const [rows] = await db.execute(sql);
+    const result = await db.query(sql);
 
-    return rows;
+    return result.rows;
 };
 
 
@@ -104,11 +104,11 @@ const updateFundNAV = async (
 
     const sql = `
         UPDATE mutual_funds
-        SET current_nav = ?
-        WHERE fund_id = ?
+        SET current_nav = $1
+        WHERE fund_id = $2
     `;
 
-    await db.execute(sql, [
+    await db.query(sql, [
         current_nav,
         fundId
     ]);

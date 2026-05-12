@@ -1,4 +1,6 @@
-const db = require('../utility/dbManager');
+const db = require('../utility/pgManager');
+
+
 
 const insertInvestor = async (data) => {
 
@@ -10,46 +12,81 @@ const insertInvestor = async (data) => {
             last_name,
             email,
             phone_number,
-            pan_number
+            pan_number,
+            password
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
     `;
 
-    await db.execute(sql, [
+
+
+    const values = [
+
         data.investor_id,
         data.first_name,
         data.last_name,
         data.email,
         data.phone_number,
-        data.pan_number
-    ]);
+        data.pan_number,
+        data.password
+    ];
+
+
+
+    await db.query(sql, values);
+
+
 
     return {
-        message: 'Investor Created Successfully'
+
+        message:
+            'Investor Created Successfully'
     };
 };
 
-const fetchInvestor = async (investorId) => {
+
+
+const fetchInvestor = async (
+    investorId
+) => {
 
     const sql = `
-        SELECT * FROM investors
-        WHERE investor_id = ?
+        SELECT *
+        FROM investors
+        WHERE investor_id = $1
     `;
 
-    const [rows] = await db.execute(sql, [investorId]);
 
-    return rows;
+
+    const result =
+        await db.query(
+            sql,
+            [investorId]
+        );
+
+
+
+    return result.rows;
 };
 
-const fetchHoldings = async (investorId) => {
+
+
+const fetchHoldings = async (
+    investorId
+) => {
 
     const sql = `
         SELECT
+
             mf.fund_name,
-            SUM(it.units_purchased) AS units_held,
+
+            SUM(it.units_purchased)
+            AS units_held,
+
             mf.current_nav,
 
-            SUM(it.units_purchased) * mf.current_nav
+            SUM(it.units_purchased)
+            * mf.current_nav
             AS current_value
 
         FROM investment_transactions it
@@ -57,39 +94,70 @@ const fetchHoldings = async (investorId) => {
         JOIN mutual_funds mf
         ON it.fund_id = mf.fund_id
 
-        WHERE it.investor_id = ?
+        WHERE it.investor_id = $1
 
-        GROUP BY mf.fund_name, mf.current_nav
+        GROUP BY
+            mf.fund_name,
+            mf.current_nav
     `;
 
-    const [rows] = await db.execute(sql, [investorId]);
 
-    return rows;
+
+    const result =
+        await db.query(
+            sql,
+            [investorId]
+        );
+
+
+
+    return result.rows;
 };
 
-const fetchNetworth = async (investorId) => {
+
+
+const fetchNetworth = async (
+    investorId
+) => {
 
     const sql = `
         SELECT
-            SUM(it.units_purchased * mf.current_nav)
-            AS networth
+
+            SUM(
+                it.units_purchased
+                * mf.current_nav
+            ) AS networth
 
         FROM investment_transactions it
 
         JOIN mutual_funds mf
         ON it.fund_id = mf.fund_id
 
-        WHERE it.investor_id = ?
+        WHERE it.investor_id = $1
     `;
 
-    const [rows] = await db.execute(sql, [investorId]);
 
-    return rows;
+
+    const result =
+        await db.query(
+            sql,
+            [investorId]
+        );
+
+
+
+    return result.rows;
 };
 
+
+
 module.exports = {
+
     insertInvestor,
+
     fetchInvestor,
+
     fetchHoldings,
+
     fetchNetworth
 };
