@@ -15,7 +15,8 @@ const {
     createInvestor,
     getInvestor,
     getHoldings,
-    getNetworth
+    getNetworth,
+    allInvestors
 
 } = require('../controllers/investorController');
 
@@ -119,6 +120,11 @@ router.get(
     '/:investorId/networth',
     verifyUser,
     getNetworth
+);
+
+router.get(
+    '/',
+    allInvestors
 );
 
 

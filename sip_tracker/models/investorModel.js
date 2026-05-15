@@ -149,6 +149,18 @@ const fetchNetworth = async (
     return result.rows;
 };
 
+const getAllInvestors = async () => {
+
+    const sql = `
+        SELECT *
+        FROM investors
+    `;
+
+    const result = await db.query(sql);
+
+    return result.rows;
+};
+
 
 
 module.exports = {
@@ -159,5 +171,7 @@ module.exports = {
 
     fetchHoldings,
 
-    fetchNetworth
+    fetchNetworth,
+
+    getAllInvestors
 };

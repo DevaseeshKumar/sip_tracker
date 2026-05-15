@@ -2,7 +2,8 @@ const {
     insertInvestor,
     fetchInvestor,
     fetchHoldings,
-    fetchNetworth
+    fetchNetworth,
+    getAllInvestors
 } = require('../models/investorModel');
 
 const createInvestor = async (req, res) => {
@@ -86,9 +87,25 @@ const getNetworth = async (req, res) => {
     }
 };
 
+const allInvestors = async (req, res) => {
+
+    try {
+        const investors = await getAllInvestors();
+        res.json(investors);
+        console.log('All investors fetched successfully');
+        console.log(investors);
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+        console.error('Error fetching all investors:', error);
+    }
+};
+
 module.exports = {
     createInvestor,
     getInvestor,
     getHoldings,
-    getNetworth
+    getNetworth,
+    allInvestors
 };
